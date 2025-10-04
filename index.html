@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 Supabase Control</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 50px;
+      background: #f7f7f7;
+    }
+    button {
+      width: 120px;
+      height: 60px;
+      font-size: 18px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { opacity: 0.8; }
+    .fwd { background: #4CAF50; }
+    .bwd { background: #f44336; }
+    .left { background: #2196F3; }
+    .right { background: #FF9800; }
+    .stop { background: #555; }
+    #status {
+      margin-top: 30px;
+      font-size: 18px;
+      color: #333;
+      padding: 10px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h2>🚗 Supabase ESP32 Controller</h2>
+
+  <button class="fwd" onclick="sendCmd('forward')">Forward</button><br>
+  <button class="left" onclick="sendCmd('left')">Left</button>
+  <button class="stop" onclick="sendCmd('stop')">Stop</button>
+  <button class="right" onclick="sendCmd('right')">Right</button><br>
+  <button class="bwd" onclick="sendCmd('backward')">Backward</button>
+
+  <div id="status">Status: Ready</div>
+
+  <script>
+    const SUPABASE_URL = "https://tkzpxdanxrqhuoicknrv.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_7-J4xSJ-JkvCW6_E5OpjbA_DFhtHCNd";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const statusDiv = document.getElementById("status");
+
+    async function sendCmd(direction) {
+      statusDiv.textContent = `Sending command: ${direction}...`;
+      statusDiv.style.background = "#ffe680"; // yellow (sending)
+
+      const { error } = await supabaseClient.from('commands').insert([{ direction }]);
+
+      if (error) {
+        console.error(error);
+        statusDiv.textContent = "❌ Error sending command: " + error.message;
+        statusDiv.style.background = "#ffcccc"; // red (error)
+      } else {
+        statusDiv.textContent = `✅ Command "${direction}" sent successfully!`;
+        statusDiv.style.background = "#ccffcc"; // green (success)
+      }
+    }
+  </script>
+</body>
+</html>
