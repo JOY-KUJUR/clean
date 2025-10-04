@@ -1,52 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32 Supabase Control</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #dbeafe;
+      --background: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      padding: 2rem;
       text-align: center;
-      margin-top: 50px;
-      background: #f7f7f7;
     }
-    button {
-      width: 120px;
-      height: 60px;
-      font-size: 18px;
-      margin: 10px;
-      border: none;
-      border-radius: 10px;
-      color: white;
-      cursor: pointer;
-      transition: 0.2s;
+
+    .header {
+      margin-bottom: 2rem;
     }
-    button:hover { opacity: 0.8; }
-    .fwd { background: #4CAF50; }
-    .bwd { background: #f44336; }
-    .left { background: #2196F3; }
-    .right { background: #FF9800; }
-    .stop { background: #555; }
-    #status {
-      margin-top: 30px;
-      font-size: 18px;
-      color: #333;
-      padding: 10px;
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .control-btn {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      display: inline-block;
+      padding: 1rem;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90px;
+    }
+
+    .control-btn:hover {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .control-btn:active {
+      transform: translateY(0);
+    }
+
+    .control-btn i {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-forward {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .btn-left {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .btn-stop {
+      grid-column: 2;
+      grid-row: 2;
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .btn-stop:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    .btn-right {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .btn-backward {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .status-container {
+      background-color: var(--primary-light);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .status-content {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .status-sending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-success {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-error {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+    }
+
+    .connection-dot.offline {
+      background-color: var(--error);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+      
+      .control-btn {
+        min-height: 80px;
+        font-size: 1rem;
+      }
+      
+      .control-btn i {
+        font-size: 1.25rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>🚗 Supabase ESP32 Controller</h2>
+  <div class="container">
+    <div class="header">
+      <h1>ESP32 Robot Controller</h1>
+      <p>Control your robot using the directional buttons below</p>
+    </div>
 
-  <button class="fwd" onclick="sendCmd('forward')">Forward</button><br>
-  <button class="left" onclick="sendCmd('left')">Left</button>
-  <button class="stop" onclick="sendCmd('stop')">Stop</button>
-  <button class="right" onclick="sendCmd('right')">Right</button><br>
-  <button class="bwd" onclick="sendCmd('backward')">Backward</button>
+    <div class="control-grid">
+      <button class="control-btn btn-forward" onclick="sendCmd('forward')">
+        <i>↑</i>
+        Forward
+      </button>
+      <button class="control-btn btn-left" onclick="sendCmd('left')">
+        <i>←</i>
+        Left
+      </button>
+      <button class="control-btn btn-stop" onclick="sendCmd('stop')">
+        <i>■</i>
+        Stop
+      </button>
+      <button class="control-btn btn-right" onclick="sendCmd('right')">
+        <i>→</i>
+        Right
+      </button>
+      <button class="control-btn btn-backward" onclick="sendCmd('backward')">
+        <i>↓</i>
+        Backward
+      </button>
+    </div>
 
-  <div id="status">Status: Ready</div>
+    <div class="status-container" id="status">
+      <div class="status-label">Current Status</div>
+      <div class="status-content">Ready to send commands</div>
+    </div>
+
+    <div class="connection-status">
+      <div class="connection-dot" id="connectionDot"></div>
+      <span id="connectionText">Connected to Supabase</span>
+    </div>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://tkzpxdanxrqhuoicknrv.supabase.co";
@@ -54,22 +260,89 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const statusDiv = document.getElementById("status");
+    const statusContent = statusDiv.querySelector(".status-content");
+    const connectionDot = document.getElementById("connectionDot");
+    const connectionText = document.getElementById("connectionText");
 
-    async function sendCmd(direction) {
-      statusDiv.textContent = `Sending command: ${direction}...`;
-      statusDiv.style.background = "#ffe680"; // yellow (sending)
-
-      const { error } = await supabaseClient.from('commands').insert([{ direction }]);
-
-      if (error) {
-        console.error(error);
-        statusDiv.textContent = "❌ Error sending command: " + error.message;
-        statusDiv.style.background = "#ffcccc"; // red (error)
-      } else {
-        statusDiv.textContent = `✅ Command "${direction}" sent successfully!`;
-        statusDiv.style.background = "#ccffcc"; // green (success)
+    // Check connection status
+    async function checkConnection() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('commands')
+          .select('*')
+          .limit(1);
+        
+        if (error) {
+          connectionDot.classList.add("offline");
+          connectionText.textContent = "Connection error";
+        } else {
+          connectionDot.classList.remove("offline");
+          connectionText.textContent = "Connected to Supabase";
+        }
+      } catch (err) {
+        connectionDot.classList.add("offline");
+        connectionText.textContent = "Connection error";
       }
     }
+
+    // Initialize connection check
+    checkConnection();
+
+    async function sendCmd(direction) {
+      // Update UI to show sending state
+      statusDiv.classList.add("status-sending");
+      statusContent.textContent = `Sending command: ${direction}...`;
+
+      try {
+        const { error } = await supabaseClient
+          .from('commands')
+          .insert([{ direction }]);
+
+        if (error) {
+          console.error(error);
+          statusDiv.classList.remove("status-sending");
+          statusDiv.classList.add("status-error");
+          statusContent.textContent = `Error: ${error.message}`;
+        } else {
+          statusDiv.classList.remove("status-sending");
+          statusDiv.classList.add("status-success");
+          statusContent.textContent = `Command "${direction}" sent successfully!`;
+          
+          // Reset status after 2 seconds
+          setTimeout(() => {
+            statusDiv.classList.remove("status-success");
+            statusContent.textContent = "Ready to send commands";
+          }, 2000);
+        }
+      } catch (err) {
+        console.error(err);
+        statusDiv.classList.remove("status-sending");
+        statusDiv.classList.add("status-error");
+        statusContent.textContent = "Network error - please check connection";
+      }
+    }
+
+    // Add keyboard controls
+    document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'ArrowUp':
+          sendCmd('forward');
+          break;
+        case 'ArrowDown':
+          sendCmd('backward');
+          break;
+        case 'ArrowLeft':
+          sendCmd('left');
+          break;
+        case 'ArrowRight':
+          sendCmd('right');
+          break;
+        case ' ':
+          e.preventDefault();
+          sendCmd('stop');
+          break;
+      }
+    });
   </script>
 </body>
 </html>
